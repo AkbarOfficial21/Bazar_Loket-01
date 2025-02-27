@@ -36,8 +36,16 @@
             transform: scale(1.05);
         }
 
+        .table-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+
         table {
-            margin: 20px 0;
+            margin: 0;
             border-radius: 8px;
             overflow: hidden;
             width: 100%; /* Memastikan tabel mengambil lebar penuh */
@@ -150,18 +158,20 @@
             </div>
             <button id="download-btn" class="btn btn-info">Download CSV</button>
             <button id="reset-btn" class="btn btn-warning">Reset All AKSI</button>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>CODE KUPON</th>
-                        <th>STATUS</th>
-                        <th>AKSI</th>
-                    </tr>
-                </thead>
-                <tbody id="data-table">
-                    <!-- Kupon list -->
-                </tbody>
-            </table>
+            <div class="table-container">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>CODE KUPON</th>
+                            <th>STATUS</th>
+                            <th>AKSI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-table">
+                        <!-- Kupon list -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
