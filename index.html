@@ -13,6 +13,7 @@
             font-family: 'Arial', sans-serif;
             color: #333;
             animation: fadeIn 1s;
+            padding: 20px;
         }
 
         h1 {
@@ -80,8 +81,27 @@
         }
 
         @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
             #reader {
                 max-width: 100%;
+            }
+
+            .table {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            button {
+                width: 100%;
+                margin: 5px 0;
             }
         }
 
