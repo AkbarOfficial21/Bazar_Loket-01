@@ -4,64 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Code Scanner</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
             background-color: #f4f4f9;
         }
 
         h1 {
             color: #333;
+            margin-bottom: 20px;
         }
 
-        #scanner-container {
-            position: relative;
-            width: 400px;
-            height: 300px;
+        #reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px;
             border: 2px solid #007BFF;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: black;
-        }
-
-        #reader, #snapshot-canvas {
-            width: 100%;
-            height: 100%;
         }
 
         table {
-            width: 100%;
-            max-width: 600px;
-            border-collapse: collapse;
             margin: 20px 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        th, td {
-            padding: 10px;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #007BFF;
-            color: white;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
         }
 
         .status-belum {
@@ -77,74 +43,43 @@
         #admin-panel {
             display: none;
             margin-top: 20px;
-            width: 100%;
-            max-width: 600px;
         }
 
         button {
             margin: 5px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
         }
 
-        #login-btn {
-            background-color: #28a745;
-            color: white;
-            position: absolute;
-            top: 20px;
-            right: 20px;
-        }
-
-        #logout-btn, #reset-btn, .reset-item-btn {
-            background-color: #dc3545;
-            color: white;
-        }
-
-        #capture-btn {
-            background-color: #007BFF;
-            color: white;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        @media (max-width: 600px) {
-            table, #reader {
-                width: 100%;
+        @media (max-width: 768px) {
+            #reader {
+                max-width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <h1>QR Code Scanner</h1>
-    <div id="scanner-container">
-        <canvas id="snapshot-canvas" style="display: none;"></canvas>
+    <div class="container text-center">
+        <h1>QR Code Scanner</h1>
         <div id="reader"></div>
-    </div>
 
-    <button id="login-btn">Login Admin</button>
-    <button id="logout-btn" style="display:none;">Logout</button>
-    <button id="capture-btn">Capture QR</button>
+        <button id="login-btn" class="btn btn-success">Login Admin</button>
+        <button id="logout-btn" class="btn btn-danger" style="display:none;">Logout</button>
 
-    <div id="admin-panel">
-        <h2>Admin Panel</h2>
-        <table id="data-table">
-            <thead>
-                <tr>
-                    <th>CODE KUPON</th>
-                    <th>STATUS</th>
-                    <th>AKSI</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Kupon list -->
-            </tbody>
-        </table>
-        <button id="reset-btn">Reset All</button>
+        <div id="admin-panel" class="mt-4">
+            <h2>Admin Panel</h2>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>CODE KUPON</th>
+                        <th>STATUS</th>
+                        <th>AKSI</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table">
+                    <!-- Kupon list -->
+                </tbody>
+            </table>
+            <button id="reset-btn" class="btn btn-warning">Reset All</button>
+        </div>
     </div>
 
     <script>
@@ -155,7 +90,7 @@
             '16B.Ramadhan/2025', '17B.Ramadhan/2025', '18B.Ramadhan/2025', '19B.Ramadhan/2025', '20B.Ramadhan/2025'
         ];
 
-        const dataTable = document.getElementById('data-table').querySelector('tbody');
+        const dataTable = document.getElementById('data-table');
 
         kuponList.forEach(code => {
             const row = dataTable.insertRow();
@@ -167,7 +102,7 @@
             const aksiCell = row.insertCell();
             const resetBtn = document.createElement('button');
             resetBtn.textContent = 'Reset';
-            resetBtn.classList.add('reset-item-btn');
+            resetBtn.className = 'btn btn-secondary btn-sm';
             resetBtn.addEventListener('click', () => resetKupon(row));
             aksiCell.appendChild(resetBtn);
         });
@@ -203,6 +138,15 @@
                             title: 'Kupon Berhasil Digunakan',
                             text: `${decodedText} berhasil digunakan!`
                         });
+                        // Hentikan pembacaan selama 5 detik
+                        html5QrCode.stop();
+                        setTimeout(() => {
+                            html5QrCode.start(
+                                { facingMode: "environment" },
+                                { fps: 10, qrbox: 250 },
+                                onScanSuccess
+                            ).catch(err => console.error('QR Code scanning failed.', err));
+                        }, 5000);
                     }
                     break;
                 }
@@ -273,45 +217,14 @@
             });
         });
 
-        document.getElementById('capture-btn').addEventListener('click', () => {
-            const videoElement = document.querySelector("video");
-            let canvas = document.getElementById("snapshot-canvas");
-            let ctx = canvas.getContext("2d");
-            
-            if (videoElement) {
-                // Ambil gambar dari video
-                canvas.width = 400;
-                canvas.height = 300;
-                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                
-                // Hentikan pemindaian
-                html5QrCode.stop();
-                document.getElementById("reader").style.display = "none";
-                canvas.style.display = "block";
-
-                // Sembunyikan canvas setelah 2 detik
-                setTimeout(() => {
-                    canvas.style.display = "none";
-                    // Mulai kembali pemindaian jika tombol ditekan lagi
-                    startScanner();
-                }, 2000);
-            } else {
-                // Jika tidak ada video, mulai pemindaian
-                startScanner();
-            }
-        });
-
-        // Fungsi untuk memulai pemindaian
-        function startScanner() {
+        // Mulai kamera secara otomatis saat halaman dimuat
+        window.onload = () => {
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
                 onScanSuccess
             ).catch(err => console.error('QR Code scanning failed.', err));
-        }
-
-        // Mulai pemindaian saat halaman dimuat
-        startScanner();
+        };
     </script>
 </body>
 </html>
