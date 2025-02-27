@@ -8,6 +8,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* Menghilangkan padding kiri dan kanan dari semua kontainer */
+        .container,
+        .container-fluid,
+        .container-lg,
+        .container-md,
+        .container-sm,
+        .container-xl {
+            width: 100%;
+            padding-left: 0; /* Menghilangkan padding kiri */
+            padding-right: 0; /* Menghilangkan padding kanan */
+            margin-right: auto;
+            margin-left: auto;
+        }
+
         body {
             background: linear-gradient(to right, #ff7e5f, #feb47b);
             font-family: 'Arial', sans-serif;
@@ -42,6 +56,7 @@
             padding: 0px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             margin-top: 20px;
+            overflow: hidden; /* Menjaga konten tetap dalam batas kontainer */
         }
 
         table {
@@ -49,7 +64,8 @@
             border-radius: 8px;
             overflow: hidden;
             width: 100%; /* Memastikan tabel mengambil lebar penuh */
-            max-width: 600px; /* Maksimal lebar tabel */
+            /* transform: scale(0.8); */ /* Zoom out tabel menjadi 80% */
+            transform-origin: top left; /* Mengatur titik asal transformasi */
         }
 
         .status-belum {
