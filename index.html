@@ -6,7 +6,6 @@
     <title>QR Code Scanner</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,124 +15,109 @@
             padding: 20px;
             background-color: #f4f4f9;
         }
-        h1, h2, h3 {
+
+        h1 {
             color: #333;
         }
+
         #reader {
             width: 300px;
             margin-bottom: 20px;
-            border: 2px solid #007bff;
+            border: 2px solid #007BFF;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: relative;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        #scan-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: 3px dashed #00ff00;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0% { border-color: #00ff00; }
-            50% { border-color: #ff0000; }
-            100% { border-color: #00ff00; }
-        }
+
         table {
-            width: 80%;
+            width: 100%;
+            max-width: 600px;
             border-collapse: collapse;
             margin: 20px 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
         }
+
         th, td {
-            border: 1px solid #ddd;
             padding: 10px;
             text-align: center;
+            border-bottom: 1px solid #ddd;
         }
+
         th {
-            background-color: #007bff;
+            background-color: #007BFF;
             color: white;
         }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
         .status-belum {
             color: green;
             font-weight: bold;
         }
+
         .status-sudah {
             color: red;
             font-weight: bold;
         }
+
         #admin-panel {
             display: none;
             margin-top: 20px;
-            width: 80%;
-            padding: 20px;
-            border: 2px solid #007bff;
-            border-radius: 8px;
-            background-color: #fff;
+            width: 100%;
+            max-width: 600px;
         }
+
         button {
             margin: 5px;
             padding: 10px 20px;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
         }
-        #login-btn, #logout-btn, #reset-btn, .reset-item-btn, #upload-btn, .download-csv-btn, #start-scan-btn {
-            background-color: #007bff;
-            color: white;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .download-csv-btn {
-            background-color: #28a745;
-        }
-        .download-csv-btn:hover {
-            background-color: #218838;
-        }
+
         #login-btn {
+            background-color: #28a745;
+            color: white;
             position: absolute;
             top: 20px;
             right: 20px;
         }
-        #reset-btn {
-            margin-bottom: 10px;
+
+        #logout-btn, #reset-btn, .reset-item-btn {
+            background-color: #dc3545;
+            color: white;
         }
-        select {
-            margin: 10px 0;
-            padding: 5px;
-            border-radius: 4px;
+
+        #capture-btn {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        @media (max-width: 600px) {
+            table, #reader {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <h1>QR Code Scanner</h1>
-    <button id="login-btn">Login Admin</button>
-    <div id="reader" style="display: none;">
-        <div id="scan-overlay"></div>
-    </div>
-    <button id="start-scan-btn">Scan</button>
+    <div id="reader"></div>
 
+    <button id="login-btn">Login Admin</button>
     <button id="logout-btn" style="display:none;">Logout</button>
+    <button id="capture-btn">Capture QR</button>
 
     <div id="admin-panel">
         <h2>Admin Panel</h2>
-        <input type="file" id="csv-file" accept=".csv">
-        <button id="upload-btn">Upload CSV</button>
-        <button class="download-csv-btn">Download Data</button>
-
-        <h3>Data Kupon</h3>
-        <button id="reset-btn">Reset All AKSI</button>
-        <label for="status-filter">Filter Status:</label>
-        <select id="status-filter">
-            <option value="all">Semua</option>
-            <option value="belum">Belum Digunakan</option>
-            <option value="sudah">Sudah Digunakan</option>
-        </select>
-
         <table id="data-table">
             <thead>
                 <tr>
@@ -146,97 +130,87 @@
                 <!-- Kupon list -->
             </tbody>
         </table>
+        <button id="reset-btn">Reset All</button>
     </div>
 
     <script>
-        let kuponList = JSON.parse(localStorage.getItem('kuponList')) || [];
-        let isScanning = false;
-        let isPopupOpen = false; // ✅ Cegah scan saat notifikasi muncul
+        const kuponList = [
+            '1B.Ramadhan/2025', '2B.Ramadhan/2025', '3B.Ramadhan/2025', '4B.Ramadhan/2025', '5B.Ramadhan/2025',
+            '6B.Ramadhan/2025', '7B.Ramadhan/2025', '8B.Ramadhan/2025', '9B.Ramadhan/2025', '10B.Ramadhan/2025',
+            '11B.Ramadhan/2025', '12B.Ramadhan/2025', '13B.Ramadhan/2025', '14B.Ramadhan/2025', '15B.Ramadhan/2025',
+            '16B.Ramadhan/2025', '17B.Ramadhan/2025', '18B.Ramadhan/2025', '19B.Ramadhan/2025', '20B.Ramadhan/2025'
+        ];
 
         const dataTable = document.getElementById('data-table').querySelector('tbody');
-        const html5QrCode = new Html5Qrcode("reader");
 
-        function saveToLocalStorage() {
-            localStorage.setItem('kuponList', JSON.stringify(kuponList));
-        }
-
-        function loadFromLocalStorage() {
-            dataTable.innerHTML = '';
-            kuponList.forEach(kupon => addKuponToTable(kupon.code, kupon.status));
-        }
-
-        function addKuponToTable(code, status = 'Belum Digunakan') {
+        kuponList.forEach(code => {
             const row = dataTable.insertRow();
             row.insertCell().textContent = code;
             const statusCell = row.insertCell();
-            statusCell.textContent = status;
-            statusCell.classList.add(status === 'Belum Digunakan' ? 'status-belum' : 'status-sudah');
+            statusCell.textContent = 'Belum Digunakan';
+            statusCell.classList.add('status-belum');
 
             const aksiCell = row.insertCell();
             const resetBtn = document.createElement('button');
             resetBtn.textContent = 'Reset';
             resetBtn.classList.add('reset-item-btn');
-            resetBtn.addEventListener('click', () => resetKupon(row, code));
+            resetBtn.addEventListener('click', () => resetKupon(row));
             aksiCell.appendChild(resetBtn);
-        }
+        });
 
-        function resetKupon(row, code) {
+        function resetKupon(row) {
             const statusCell = row.cells[1];
             statusCell.textContent = 'Belum Digunakan';
             statusCell.classList.remove('status-sudah');
             statusCell.classList.add('status-belum');
-            kuponList = kuponList.map(k => k.code === code ? { code, status: 'Belum Digunakan' } : k);
-            saveToLocalStorage();
             Swal.fire('Reset Berhasil', 'Status kupon telah direset.', 'success');
         }
 
         function onScanSuccess(decodedText) {
-            if (!isScanning || isPopupOpen) return; // ✅ Cegah multiple scan saat popup muncul
+            const rows = dataTable.rows;
+            let found = false;
 
-            isPopupOpen = true; // ✅ Set flag saat popup aktif
-
-            const kupon = kuponList.find(k => k.code === decodedText);
-            if (kupon) {
-                if (kupon.status === 'Sudah Digunakan') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Kupon Sudah Digunakan',
-                        text: `${decodedText} sudah pernah digunakan!`
-                    }).then(() => isPopupOpen = false); // ✅ Aktifkan scan lagi setelah popup ditutup
-                } else {
-                    kupon.status = 'Sudah Digunakan';
-                    saveToLocalStorage();
-                    loadFromLocalStorage();
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Kupon Berhasil Digunakan',
-                        text: `${decodedText} berhasil digunakan!`
-                    }).then(() => isPopupOpen = false); // ✅ Aktifkan scan lagi
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].cells[0].textContent === decodedText) {
+                    found = true;
+                    const statusCell = rows[i].cells[1];
+                    if (statusCell.textContent === 'Sudah Digunakan') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Kupon Sudah Digunakan',
+                            text: `${decodedText} sudah pernah digunakan!`
+                        });
+                    } else {
+                        statusCell.textContent = 'Sudah Digunakan';
+                        statusCell.classList.remove('status-belum');
+                        statusCell.classList.add('status-sudah');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Kupon Berhasil Digunakan',
+                            text: `${decodedText} berhasil digunakan!`
+                        });
+                    }
+                    break;
                 }
-            } else {
+            }
+
+            if (!found) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'Kupon Tidak Terdaftar',
                     text: `${decodedText} tidak ada dalam daftar kupon!`
-                }).then(() => isPopupOpen = false); // ✅ Aktifkan scan lagi
+                });
             }
         }
 
-        document.getElementById('start-scan-btn').addEventListener('click', () => {
-            isScanning = true;
-            document.getElementById('reader').style.display = 'block';
-            html5QrCode.start(
-                { facingMode: "environment" },
-                { fps: 10, qrbox: 250 },
-                onScanSuccess
-            ).catch(err => console.error('QR Code scanning failed.', err));
-        });
+        const html5QrCode = new Html5Qrcode("reader");
 
         document.getElementById('login-btn').addEventListener('click', () => {
             Swal.fire({
                 title: 'Masukkan Password Admin',
                 input: 'password',
                 inputPlaceholder: 'Password',
+                inputAttributes: { maxlength: 10, autocapitalize: 'off', autocorrect: 'off' },
                 showCancelButton: true
             }).then((result) => {
                 if (result.isConfirmed && result.value === '86123456') {
@@ -244,7 +218,6 @@
                     document.getElementById('login-btn').style.display = 'none';
                     document.getElementById('logout-btn').style.display = 'inline-block';
                     document.getElementById('reader').style.display = 'none';
-                    document.getElementById('start-scan-btn').style.display = 'none';
                     html5QrCode.stop();
                     Swal.fire('Berhasil!', 'Login admin berhasil.', 'success');
                 } else if (result.isConfirmed) {
@@ -253,51 +226,46 @@
             });
         });
 
-        document.querySelector('.download-csv-btn').addEventListener('click', () => {
-            const csvContent = "data:text/csv;charset=utf-8," + kuponList.map(k => `${k.code},${k.status}`).join("\n");
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "data_kupon.csv");
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        });
-
         document.getElementById('logout-btn').addEventListener('click', () => {
             document.getElementById('admin-panel').style.display = 'none';
             document.getElementById('login-btn').style.display = 'inline-block';
             document.getElementById('logout-btn').style.display = 'none';
-            document.getElementById('reader').style.display = 'none';
-            document.getElementById('start-scan-btn').style.display = 'inline-block';
-            isScanning = false;
+            document.getElementById('reader').style.display = 'block';
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                onScanSuccess
+            ).catch(err => console.error('QR Code scanning failed.', err));
         });
 
         document.getElementById('reset-btn').addEventListener('click', () => {
-            if (kuponList.length === 0) {
-                Swal.fire('Tidak Ada Data', 'Tidak ada kupon untuk direset.', 'info');
-                return;
-            }
-
             Swal.fire({
-                title: 'Apakah Anda yakin?',
-                text: "Semua status kupon akan direset!",
+                title: 'Apakah Anda yakin ingin mereset semua kupon?',
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, Reset Semua'
+                confirmButtonText: 'Ya',
+                cancelButtonText: 'Tidak'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    kuponList = kuponList.map(kupon => ({ ...kupon, status: 'Belum Digunakan' }));
-                    saveToLocalStorage();
-                    loadFromLocalStorage();
-                    Swal.fire('Berhasil!', 'Semua kupon telah direset.', 'success');
+                    const rows = dataTable.rows;
+                    for (let i = 0; i < rows.length; i++) {
+                        const statusCell = rows[i].cells[1];
+                        statusCell.textContent = 'Belum Digunakan';
+                        statusCell.classList.remove('status-sudah');
+                        statusCell.classList.add('status-belum');
+                    }
+                    Swal.fire('Reset Berhasil', 'Semua status kupon telah direset.', 'success');
                 }
             });
         });
 
-        loadFromLocalStorage();
+        document.getElementById('capture-btn').addEventListener('click', () => {
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                onScanSuccess
+            ).catch(err => console.error('QR Code scanning failed.', err));
+        });
     </script>
 </body>
 </html>
