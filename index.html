@@ -14,8 +14,6 @@
             color: #333;
             animation: fadeIn 1s;
             padding: 20px;
-            transform: scale(0.8); /* Zoom out to 80% */
-            transform-origin: top left; /* Set the origin for scaling */
         }
 
         h1 {
@@ -41,10 +39,9 @@
         .table-container {
             background-color: white;
             border-radius: 8px;
-            padding: 20px;
+            padding: 10px; /* Mengurangi padding */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             margin-top: 20px;
-            width: 100%; /* Memastikan kontainer tabel mengambil lebar penuh */
         }
 
         table {
@@ -52,6 +49,7 @@
             border-radius: 8px;
             overflow: hidden;
             width: 100%; /* Memastikan tabel mengambil lebar penuh */
+            max-width: 400px; /* Mengurangi lebar maksimum tabel */
         }
 
         .status-belum {
@@ -86,6 +84,7 @@
 
         .table td {
             text-align: left;
+            padding: 5px; /* Mengurangi padding sel */
         }
 
         .table .aksi-cell {
@@ -346,11 +345,6 @@
                     document.getElementById('login-btn').style.display = 'none';
                     document.getElementById('logout-btn').style.display = 'inline-block';
                     document.getElementById('reader').style.display = 'none';
-
-                    // Sembunyikan elemen yang diinginkan
-                    document.getElementById('total-kupon').parentElement.style.display = 'none';
-                    document.getElementById('kupon-sudah').parentElement.style.display = 'none';
-                    document.getElementById('kupon-belum').parentElement.style.display = 'none';
 
                     html5QrCode.stop();
                     Swal.fire('Berhasil!', 'Login admin berhasil.', 'success');
