@@ -92,26 +92,36 @@
 
         const dataTable = document.getElementById('data-table');
 
-        kuponList.forEach(code => {
-            const row = dataTable.insertRow();
-            row.insertCell().textContent = code;
-            const statusCell = row.insertCell();
-            statusCell.textContent = 'Belum Digunakan';
-            statusCell.classList.add('status-belum');
+        // Load kupon status dari Local Storage
+        function loadKuponStatus() {
+            const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
+            kuponList.forEach(code => {
+                const row = dataTable.insertRow();
+                row.insertCell().textContent = code;
+                const statusCell = row.insertCell();
+                statusCell.textContent = storedStatus[code] || 'Belum Digunakan';
+                statusCell.className = statusCell.textContent === 'Sudah Digunakan' ? 'status-sudah' : 'status-belum';
 
-            const aksiCell = row.insertCell();
-            const resetBtn = document.createElement('button');
-            resetBtn.textContent = 'Reset';
-            resetBtn.className = 'btn btn-secondary btn-sm';
-            resetBtn.addEventListener('click', () => resetKupon(row));
-            aksiCell.appendChild(resetBtn);
-        });
+                const aksiCell = row.insertCell();
+                const resetBtn = document.createElement('button');
+                resetBtn.textContent = 'Reset';
+                resetBtn.className = 'btn btn-secondary btn-sm';
+                resetBtn.addEventListener('click', () => resetKupon(row, code));
+                aksiCell.appendChild(resetBtn);
+            });
+        }
 
-        function resetKupon(row) {
+        function resetKupon(row, code) {
             const statusCell = row.cells[1];
             statusCell.textContent = 'Belum Digunakan';
             statusCell.classList.remove('status-sudah');
             statusCell.classList.add('status-belum');
+
+            // Update Local Storage
+            const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
+            storedStatus[code] = 'Belum Digunakan';
+            localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
+
             Swal.fire('Reset Berhasil', 'Status kupon telah direset.', 'success');
         }
 
@@ -123,6 +133,8 @@
                 if (rows[i].cells[0].textContent === decodedText) {
                     found = true;
                     const statusCell = rows[i].cells[1];
+                    const code = rows[i].cells[0].textContent;
+
                     if (statusCell.textContent === 'Sudah Digunakan') {
                         Swal.fire({
                             icon: 'error',
@@ -138,15 +150,11 @@
                             title: 'Kupon Berhasil Digunakan',
                             text: `${decodedText} berhasil digunakan!`
                         });
-                        // Hentikan pembacaan selama 5 detik
-                        html5QrCode.stop();
-                        setTimeout(() => {
-                            html5QrCode.start(
-                                { facingMode: "environment" },
-                                { fps: 10, qrbox: 250 },
-                                onScanSuccess
-                            ).catch(err => console.error('QR Code scanning failed.', err));
-                        }, 5000);
+
+                        // Update Local Storage
+                        const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
+                        storedStatus[code] = 'Sudah Digunakan';
+                        localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
                     }
                     break;
                 }
@@ -159,6 +167,16 @@
                     text: `${decodedText} tidak ada dalam daftar kupon!`
                 });
             }
+
+            // Hentikan pembacaan selama 5 detik
+            html5QrCode.stop();
+            setTimeout(() => {
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: 250 },
+                    onScanSuccess
+                ).catch(err => console.error('QR Code scanning failed.', err));
+            }, 5000);
         }
 
         const html5QrCode = new Html5Qrcode("reader");
@@ -212,13 +230,16 @@
                         statusCell.classList.remove('status-sudah');
                         statusCell.classList.add('status-belum');
                     }
+                    // Reset Local Storage
+                    localStorage.removeItem('kuponStatus');
                     Swal.fire('Reset Berhasil', 'Semua status kupon telah direset.', 'success');
                 }
             });
         });
 
-        // Mulai kamera secara otomatis saat halaman dimuat
+        // Load kupon status saat halaman dimuat
         window.onload = () => {
+            loadKuponStatus();
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
