@@ -121,6 +121,26 @@
             margin-bottom: 20px;
         }
 
+        /* Gaya untuk input group */
+        .input-group {
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            width: 100%;
+            margin-bottom: 15px; /* Tambahkan margin bawah untuk pemisahan */
+        }
+
+        .input-group > .form-control,
+        .input-group > .custom-file,
+        .input-group > .custom-select,
+        .input-group > .form-control-plaintext {
+            position: relative;
+            flex: 1 1 auto;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+
         @media (max-width: 900px) {
             h1 {
                 font-size: 2rem;
@@ -169,12 +189,16 @@
         <div id="admin-panel" class="mt-4">
             <h2>Admin Panel</h2>
             <div class="form-group">
-                <label for="filter">Filter Kupon:</label>
+                <label for="search">Pencarian Kupon:</label>
+                <div class="input-group">
+                    <input type="text" id="search" class="form-control" placeholder="Cari kode kupon..." oninput="searchKupon()">
+                </div>
                 <select id="filter" class="form-control" style="width: auto;" onchange="filterKupon()">
                     <option value="semua">Semua</option>
                     <option value="sudah">Sudah Digunakan</option>
                     <option value="belum">Belum Digunakan</option>
                 </select>
+                <button class="btn btn-outline-secondary" id="refresh-btn" onclick="refreshSearch()">Refresh</button>
             </div>
             <div id="stats" class="mb-3">
                 <p>Total Kupon: <span id="total-kupon-admin">0</span></p>
@@ -929,6 +953,24 @@
                     rows[i].style.display = 'none';
                 }
             }
+        }
+
+        function searchKupon() {
+            const searchValue = document.getElementById('search').value.toLowerCase();
+            const rows = dataTable.rows;
+
+            for (let i = 0; i < rows.length; i++) {
+                const codeCell = rows[i].cells[0];
+                if (codeCell) {
+                    const codeText = codeCell.textContent.toLowerCase();
+                    rows[i].style.display = codeText.includes(searchValue) ? '' : 'none';
+                }
+            }
+        }
+
+        function refreshSearch() {
+            document.getElementById('search').value = '';
+            searchKupon(); // Refresh the search results
         }
 
         function downloadCSV() {
