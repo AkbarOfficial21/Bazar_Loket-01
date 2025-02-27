@@ -9,17 +9,12 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
-            background: linear-gradient(to right, #ff7e5f, #feb47b);
-            font-family: 'Arial', sans-serif;
-            color: #333;
-            animation: fadeIn 1s;
-            padding: 20px;
+            background-color: #f4f4f9;
         }
 
         h1 {
+            color: #333;
             margin-bottom: 20px;
-            font-size: 2.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         #reader {
@@ -28,28 +23,11 @@
             margin: 0 auto 20px;
             border: 2px solid #007BFF;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s;
-        }
-
-        #reader:hover {
-            transform: scale(1.05);
-        }
-
-        .table-container {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         table {
-            margin: 0;
-            border-radius: 8px;
-            overflow: hidden;
-            width: 100%; /* Memastikan tabel mengambil lebar penuh */
-            max-width: 600px; /* Maksimal lebar tabel */
+            margin: 20px 0;
         }
 
         .status-belum {
@@ -65,67 +43,31 @@
         #admin-panel {
             display: none;
             margin-top: 20px;
-            text-align: left;
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: left; /* Rata kiri untuk kontainer admin panel */
         }
 
         button {
             margin: 5px;
         }
 
+        /* Rata tengah untuk header tabel */
         .table th {
             text-align: center;
-            background-color: #007BFF;
-            color: white;
         }
 
+        /* Rata kiri untuk isi tabel */
         .table td {
             text-align: left;
         }
 
+        /* Rata tengah untuk kolom aksi */
         .table .aksi-cell {
             text-align: center;
         }
 
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-
             #reader {
                 max-width: 100%;
-            }
-
-            .table {
-                font-size: 0.9rem;
-                width: 100%; /* Memastikan tabel mengambil lebar penuh pada perangkat kecil */
-            }
-        }
-
-        @media (max-width: 576px) {
-            h1 {
-                font-size: 1.5rem;
-            }
-
-            button {
-                width: 100%;
-                margin: 5px 0;
-            }
-
-            .table {
-                font-size: 0.8rem; /* Ukuran font lebih kecil untuk perangkat sangat kecil */
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
             }
         }
     </style>
@@ -135,9 +77,6 @@
         <h1>BAZAR RAMADHAN</h1>
         <div id="reader"></div>
 
-        <p>Total Kupon: <span id="total-kupon">0</span></p>
-        <p>Kupon Sudah Digunakan: <span id="kupon-sudah">0</span></p>
-        <p>Kupon Belum Digunakan: <span id="kupon-belum">0</span></p>
         <button id="login-btn" class="btn btn-success">Login Admin</button>
         <button id="logout-btn" class="btn btn-danger" style="display:none;">Logout</button>
 
@@ -158,20 +97,18 @@
             </div>
             <button id="download-btn" class="btn btn-info">Download CSV</button>
             <button id="reset-btn" class="btn btn-warning">Reset All AKSI</button>
-            <div class="table-container">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>CODE KUPON</th>
-                            <th>STATUS</th>
-                            <th>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody id="data-table">
-                        <!-- Kupon list -->
-                    </tbody>
-                </table>
-            </div>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>CODE KUPON</th>
+                        <th>STATUS</th>
+                        <th>AKSI</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table">
+                    <!-- Kupon list -->
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -185,6 +122,7 @@
 
         const dataTable = document.getElementById('data-table');
 
+        // Load kupon status dari Local Storage
         function loadKuponStatus() {
             const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
             kuponList.forEach(code => {
@@ -195,7 +133,7 @@
                 statusCell.className = statusCell.textContent === 'Sudah Digunakan' ? 'status-sudah' : 'status-belum';
 
                 const aksiCell = row.insertCell();
-                aksiCell.className = 'aksi-cell';
+                aksiCell.className = 'aksi-cell'; // Tambahkan kelas untuk kolom aksi
                 const resetBtn = document.createElement('button');
                 resetBtn.textContent = 'Reset';
                 resetBtn.className = 'btn btn-secondary btn-sm';
@@ -211,6 +149,7 @@
             statusCell.classList.remove('status-sudah');
             statusCell.classList.add('status-belum');
 
+            // Update Local Storage
             const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
             storedStatus[code] = 'Belum Digunakan';
             localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
@@ -245,6 +184,7 @@
                             text: `${decodedText} berhasil digunakan!`
                         });
 
+                        // Update Local Storage
                         const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
                         storedStatus[code] = 'Sudah Digunakan';
                         localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
@@ -261,6 +201,7 @@
                 });
             }
 
+            // Hentikan pembacaan selama 5 detik
             html5QrCode.stop();
             setTimeout(() => {
                 html5QrCode.start(
@@ -305,23 +246,23 @@
         function downloadCSV() {
             const rows = dataTable.rows;
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "CODE KUPON,STATUS\n";
+            csvContent += "CODE KUPON,STATUS\n"; // Header
 
             for (let i = 0; i < rows.length; i++) {
                 const cells = rows[i].cells;
                 const rowData = [];
-                rowData.push(cells[0].textContent);
-                rowData.push(cells[1].textContent);
-                csvContent += rowData.join(",") + "\n";
+                rowData.push(cells[0].textContent); // CODE KUPON
+                rowData.push(cells[1].textContent); // STATUS
+                csvContent += rowData.join(",") + "\n"; // Join cells with comma
             }
 
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
             link.setAttribute("download", "kupon_data.csv");
-            document.body.appendChild(link);
+            document.body.appendChild(link); // Required for FF
 
-            link.click();
+            link.click(); // This will download the data file named "kupon_data.csv"
         }
 
         const html5QrCode = new Html5Qrcode("reader");
@@ -339,12 +280,6 @@
                     document.getElementById('login-btn').style.display = 'none';
                     document.getElementById('logout-btn').style.display = 'inline-block';
                     document.getElementById('reader').style.display = 'none';
-
-                    // Sembunyikan elemen yang diinginkan
-                    document.getElementById('total-kupon').parentElement.style.display = 'none';
-                    document.getElementById('kupon-sudah').parentElement.style.display = 'none';
-                    document.getElementById('kupon-belum').parentElement.style.display = 'none';
-
                     html5QrCode.stop();
                     Swal.fire('Berhasil!', 'Login admin berhasil.', 'success');
                 } else if (result.isConfirmed) {
@@ -381,6 +316,7 @@
                         statusCell.classList.remove('status-sudah');
                         statusCell.classList.add('status-belum');
                     }
+                    // Reset Local Storage
                     localStorage.removeItem('kuponStatus');
                     updateStats();
                     Swal.fire('Reset Berhasil', 'Semua status kupon telah direset.', 'success');
@@ -388,6 +324,7 @@
             });
         });
 
+        // Load kupon status saat halaman dimuat
         window.onload = () => {
             loadKuponStatus();
             html5QrCode.start(
@@ -397,6 +334,7 @@
             ).catch(err => console.error('QR Code scanning failed.', err));
         };
 
+        // Tambahkan event listener untuk tombol download
         document.getElementById('download-btn').addEventListener('click', downloadCSV);
     </script>
 </body>
