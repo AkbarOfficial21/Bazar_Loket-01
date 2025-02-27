@@ -59,6 +59,10 @@
             overflow: hidden; /* Menjaga konten tetap dalam batas kontainer */
         }
 
+        .table-responsive {
+            overflow-x: auto; /* Menambahkan scroll horizontal */
+        }
+
         table {
             margin: 0;
             border-radius: 8px;
@@ -180,18 +184,23 @@
             <button id="download-btn" class="btn btn-info">Download CSV</button>
             <button id="reset-btn" class="btn btn-warning">Reset All AKSI</button>
             <div class="table-container">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>CODE KUPON</th>
-                            <th>STATUS</th>
-                            <th>AKSI</th>
-                        </tr>
-                    </thead>
-                    <tbody id="data-table">
-                        <!-- Kupon list -->
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <div style="overflow-x: auto;" id="scrollable-table">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>CODE KUPON</th>
+                                    <th>STATUS</th>
+                                    <th>TIMESTAMP</th>
+                                    <th>AKSI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-table">
+                                <!-- Kupon list -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -787,7 +796,6 @@
     '2941B.Ramadhan/2025', '2942B.Ramadhan/2025', '2943B.Ramadhan/2025', '2944B.Ramadhan/2025', '2945B.Ramadhan/2025',
     '2946B.Ramadhan/2025', '2947B.Ramadhan/2025', '2948B.Ramadhan/2025', '2949B.Ramadhan/2025', '2950B.Ramadhan/2025',
    ];
-
         const dataTable = document.getElementById('data-table');
 
         function loadKuponStatus() {
@@ -796,8 +804,11 @@
                 const row = dataTable.insertRow();
                 row.insertCell().textContent = code;
                 const statusCell = row.insertCell();
-                statusCell.textContent = storedStatus[code] || 'Belum Digunakan';
+                statusCell.textContent = storedStatus[code]?.status || 'Belum Digunakan';
                 statusCell.className = statusCell.textContent === 'Sudah Digunakan' ? 'status-sudah' : 'status-belum';
+
+                const timestampCell = row.insertCell();
+                timestampCell.textContent = storedStatus[code]?.timestamp || 'N/A';
 
                 const aksiCell = row.insertCell();
                 aksiCell.className = 'aksi-cell';
@@ -812,12 +823,14 @@
 
         function resetKupon(row, code) {
             const statusCell = row.cells[1];
+            const timestampCell = row.cells[2];
             statusCell.textContent = 'Belum Digunakan';
             statusCell.classList.remove('status-sudah');
             statusCell.classList.add('status-belum');
+            timestampCell.textContent = 'N/A';
 
             const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
-            storedStatus[code] = 'Belum Digunakan';
+            storedStatus[code] = { status: 'Belum Digunakan', timestamp: 'N/A' };
             localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
 
             Swal.fire('Reset Berhasil', 'Status kupon telah direset.', 'success');
@@ -832,6 +845,7 @@
                 if (rows[i].cells[0].textContent === decodedText) {
                     found = true;
                     const statusCell = rows[i].cells[1];
+                    const timestampCell = rows[i].cells[2];
                     const code = rows[i].cells[0].textContent;
 
                     if (statusCell.textContent === 'Sudah Digunakan') {
@@ -844,6 +858,8 @@
                         statusCell.textContent = 'Sudah Digunakan';
                         statusCell.classList.remove('status-belum');
                         statusCell.classList.add('status-sudah');
+                        timestampCell.textContent = new Date().toLocaleString(); // Menyimpan timestamp
+
                         Swal.fire({
                             icon: 'success',
                             title: 'Kupon Berhasil Digunakan',
@@ -851,7 +867,10 @@
                         });
 
                         const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
-                        storedStatus[code] = 'Sudah Digunakan';
+                        storedStatus[code] = {
+                            status: 'Sudah Digunakan',
+                            timestamp: timestampCell.textContent
+                        };
                         localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
                     }
                     break;
@@ -881,7 +900,7 @@
         function updateStats() {
             const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
             const totalKupon = kuponList.length;
-            const kuponSudah = kuponList.filter(code => storedStatus[code] === 'Sudah Digunakan').length;
+            const kuponSudah = kuponList.filter(code => storedStatus[code]?.status === 'Sudah Digunakan').length;
             const kuponBelum = totalKupon - kuponSudah;
 
             document.getElementById('total-kupon').textContent = totalKupon;
@@ -915,13 +934,14 @@
         function downloadCSV() {
             const rows = dataTable.rows;
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "CODE KUPON,STATUS\n";
+            csvContent += "CODE KUPON,STATUS,TIMESTAMP\n";
 
             for (let i = 0; i < rows.length; i++) {
                 const cells = rows[i].cells;
                 const rowData = [];
                 rowData.push(cells[0].textContent);
                 rowData.push(cells[1].textContent);
+                rowData.push(cells[2].textContent); // Menambahkan timestamp
                 csvContent += rowData.join(",") + "\n";
             }
 
@@ -987,9 +1007,11 @@
                     const rows = dataTable.rows;
                     for (let i = 0; i < rows.length; i++) {
                         const statusCell = rows[i].cells[1];
+                        const timestampCell = rows[i].cells[2];
                         statusCell.textContent = 'Belum Digunakan';
                         statusCell.classList.remove('status-sudah');
                         statusCell.classList.add('status-belum');
+                        timestampCell.textContent = 'N/A';
                     }
                     localStorage.removeItem('kuponStatus');
                     updateStats();
@@ -1008,6 +1030,37 @@
         };
 
         document.getElementById('download-btn').addEventListener('click', downloadCSV);
+
+        // Fungsionalitas geser tabel
+        const scrollableTable = document.getElementById('scrollable-table');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        scrollableTable.addEventListener('mousedown', (e) => {
+            isDown = true;
+            scrollableTable.classList.add('active');
+            startX = e.pageX - scrollableTable.offsetLeft;
+            scrollLeft = scrollableTable.scrollLeft;
+        });
+
+        scrollableTable.addEventListener('mouseleave', () => {
+            isDown = false;
+            scrollableTable.classList.remove('active');
+        });
+
+        scrollableTable.addEventListener('mouseup', () => {
+            isDown = false;
+            scrollableTable.classList.remove('active');
+        });
+
+        scrollableTable.addEventListener('mousemove', (e) => {
+            if (!isDown) return; // stop the fn from running
+            e.preventDefault();
+            const x = e.pageX - scrollableTable.offsetLeft;
+            const walk = (x - startX) * 2; // the multiplier can be adjusted for speed
+            scrollableTable.scrollLeft = scrollLeft - walk;
+        });
     </script>
 </body>
 </html>
