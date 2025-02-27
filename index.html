@@ -43,10 +43,26 @@
         #admin-panel {
             display: none;
             margin-top: 20px;
+            text-align: left; /* Rata kiri untuk kontainer admin panel */
         }
 
         button {
             margin: 5px;
+        }
+
+        /* Rata tengah untuk header tabel */
+        .table th {
+            text-align: center;
+        }
+
+        /* Rata kiri untuk isi tabel */
+        .table td {
+            text-align: left;
+        }
+
+        /* Rata tengah untuk kolom aksi */
+        .table .aksi-cell {
+            text-align: center;
         }
 
         @media (max-width: 768px) {
@@ -66,6 +82,20 @@
 
         <div id="admin-panel" class="mt-4">
             <h2>Admin Panel</h2>
+            <div class="form-group">
+                <label for="filter">Filter Kupon:</label>
+                <select id="filter" class="form-control" style="width: auto;" onchange="filterKupon()">
+                    <option value="semua">Semua</option>
+                    <option value="sudah">Sudah Digunakan</option>
+                    <option value="belum">Belum Digunakan</option>
+                </select>
+            </div>
+            <div id="stats" class="mb-3">
+                <p>Total Kupon: <span id="total-kupon">0</span></p>
+                <p>Kupon Sudah Digunakan: <span id="kupon-sudah">0</span></p>
+                <p>Kupon Belum Digunakan: <span id="kupon-belum">0</span></p>
+            </div>
+            <button id="download-btn" class="btn btn-info">Download CSV</button>
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -687,12 +717,14 @@
                 statusCell.className = statusCell.textContent === 'Sudah Digunakan' ? 'status-sudah' : 'status-belum';
 
                 const aksiCell = row.insertCell();
+                aksiCell.className = 'aksi-cell'; // Tambahkan kelas untuk kolom aksi
                 const resetBtn = document.createElement('button');
                 resetBtn.textContent = 'Reset';
                 resetBtn.className = 'btn btn-secondary btn-sm';
                 resetBtn.addEventListener('click', () => resetKupon(row, code));
                 aksiCell.appendChild(resetBtn);
             });
+            updateStats();
         }
 
         function resetKupon(row, code) {
@@ -707,6 +739,7 @@
             localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
 
             Swal.fire('Reset Berhasil', 'Status kupon telah direset.', 'success');
+            updateStats();
         }
 
         function onScanSuccess(decodedText) {
@@ -761,6 +794,59 @@
                     onScanSuccess
                 ).catch(err => console.error('QR Code scanning failed.', err));
             }, 5000);
+
+            updateStats();
+        }
+
+        function updateStats() {
+            const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
+            const totalKupon = kuponList.length;
+            const kuponSudah = kuponList.filter(code => storedStatus[code] === 'Sudah Digunakan').length;
+            const kuponBelum = totalKupon - kuponSudah;
+
+            document.getElementById('total-kupon').textContent = totalKupon;
+            document.getElementById('kupon-sudah').textContent = kuponSudah;
+            document.getElementById('kupon-belum').textContent = kuponBelum;
+        }
+
+        function filterKupon() {
+            const filterValue = document.getElementById('filter').value;
+            const rows = dataTable.rows;
+
+            for (let i = 0; i < rows.length; i++) {
+                const statusCell = rows[i].cells[1];
+                if (filterValue === 'semua') {
+                    rows[i].style.display = '';
+                } else if (filterValue === 'sudah' && statusCell.textContent === 'Sudah Digunakan') {
+                    rows[i].style.display = '';
+                } else if (filterValue === 'belum' && statusCell.textContent === 'Belum Digunakan') {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+
+        function downloadCSV() {
+            const rows = dataTable.rows;
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "CODE KUPON,STATUS\n"; // Header
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].cells;
+                const rowData = [];
+                rowData.push(cells[0].textContent); // CODE KUPON
+                rowData.push(cells[1].textContent); // STATUS
+                csvContent += rowData.join(",") + "\n"; // Join cells with comma
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "kupon_data.csv");
+            document.body.appendChild(link); // Required for FF
+
+            link.click(); // This will download the data file named "kupon_data.csv"
         }
 
         const html5QrCode = new Html5Qrcode("reader");
@@ -816,6 +902,7 @@
                     }
                     // Reset Local Storage
                     localStorage.removeItem('kuponStatus');
+                    updateStats();
                     Swal.fire('Reset Berhasil', 'Semua status kupon telah direset.', 'success');
                 }
             });
@@ -830,6 +917,9 @@
                 onScanSuccess
             ).catch(err => console.error('QR Code scanning failed.', err));
         };
+
+        // Tambahkan event listener untuk tombol download
+        document.getElementById('download-btn').addEventListener('click', downloadCSV);
     </script>
 </body>
 </html>
