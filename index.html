@@ -121,24 +121,9 @@
             margin-bottom: 20px;
         }
 
-        /* Gaya untuk input group */
-        .input-group {
-            position: relative;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: stretch;
-            width: 100%;
-            margin-bottom: 15px; /* Tambahkan margin bawah untuk pemisahan */
-        }
 
-        .input-group > .form-control,
-        .input-group > .custom-file,
-        .input-group > .custom-select,
-        .input-group > .form-control-plaintext {
-            position: relative;
-            flex: 1 1 auto;
-            min-width: 0;
-            margin-bottom: 0;
+        .custom-input-kupon button:hover {
+            background-color: #0056b3;
         }
 
         @media (max-width: 900px) {
@@ -182,6 +167,15 @@
         <button class="title-button" id="login-btn">BAZAR RAMADHAN</button>
         <button id="logout-btn" class="btn btn-danger" style="display:none;">Logout</button>
         <div id="reader"></div>
+        
+        <!-- Container untuk input kupon -->
+        <div class="custom-input-kupon-container">
+            <div class="custom-input-kupon">
+                <input type="text" id="kupon-input" placeholder="Masukkan kode kupon...">
+                <button onclick="useKupon()">Gunakan Kupon</button>
+            </div>
+        </div>
+
         <p style="text-align: left;">Total Kupon: <span id="total-kupon">0</span></p>
         <p style="text-align: left;">Kupon Sudah Digunakan: <span id="kupon-sudah">0</span></p>
         <p style="text-align: left;">Kupon Belum Digunakan: <span id="kupon-belum">0</span></p>        
@@ -193,12 +187,14 @@
                 <div class="input-group">
                     <input type="text" id="search" class="form-control" placeholder="Cari kode kupon..." oninput="searchKupon()">
                 </div>
+                <button class="btn btn-outline-secondary" id="refresh-btn" onclick="refreshSearch()">Refresh</button>
+                <label for="kupon-input" class="mt-2">Input Kupon:</label>
+                <label for="filter" class="mt-2">Filter Kupon:</label>
                 <select id="filter" class="form-control" style="width: auto;" onchange="filterKupon()">
                     <option value="semua">Semua</option>
                     <option value="sudah">Sudah Digunakan</option>
                     <option value="belum">Belum Digunakan</option>
                 </select>
-                <button class="btn btn-outline-secondary" id="refresh-btn" onclick="refreshSearch()">Refresh</button>
             </div>
             <div id="stats" class="mb-3">
                 <p>Total Kupon: <span id="total-kupon-admin">0</span></p>
@@ -820,6 +816,7 @@
     '2941B.Ramadhan/2025', '2942B.Ramadhan/2025', '2943B.Ramadhan/2025', '2944B.Ramadhan/2025', '2945B.Ramadhan/2025',
     '2946B.Ramadhan/2025', '2947B.Ramadhan/2025', '2948B.Ramadhan/2025', '2949B.Ramadhan/2025', '2950B.Ramadhan/2025',
    ];
+
         const dataTable = document.getElementById('data-table');
 
         function loadKuponStatus() {
@@ -827,9 +824,24 @@
             kuponList.forEach(code => {
                 const row = dataTable.insertRow();
                 row.insertCell().textContent = code;
+
+                // Dropdown untuk status
                 const statusCell = row.insertCell();
-                statusCell.textContent = storedStatus[code]?.status || 'Belum Digunakan';
-                statusCell.className = statusCell.textContent === 'Sudah Digunakan' ? 'status-sudah' : 'status-belum';
+                const statusSelect = document.createElement('select');
+                statusSelect.className = 'form-control';
+                statusSelect.innerHTML = `
+                    <option value="Belum Digunakan" ${storedStatus[code]?.status === 'Belum Digunakan' ? 'selected' : ''}>Belum Digunakan</option>
+                    <option value="Sudah Digunakan" ${storedStatus[code]?.status === 'Sudah Digunakan' ? 'selected' : ''}>Sudah Digunakan</option>
+                `;
+                statusSelect.addEventListener('change', () => {
+                    const newStatus = statusSelect.value;
+                    statusCell.className = newStatus === 'Sudah Digunakan' ? 'status-sudah' : 'status-belum';
+
+                    // Update status di localStorage
+                    storedStatus[code] = { status: newStatus, timestamp: storedStatus[code]?.timestamp || 'N/A' };
+                    localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
+                });
+                statusCell.appendChild(statusSelect);
 
                 const timestampCell = row.insertCell();
                 timestampCell.textContent = storedStatus[code]?.timestamp || 'N/A';
@@ -848,7 +860,7 @@
         function resetKupon(row, code) {
             const statusCell = row.cells[1];
             const timestampCell = row.cells[2];
-            statusCell.textContent = 'Belum Digunakan';
+            statusCell.querySelector('select').value = 'Belum Digunakan';
             statusCell.classList.remove('status-sudah');
             statusCell.classList.add('status-belum');
             timestampCell.textContent = 'N/A';
@@ -872,14 +884,14 @@
                     const timestampCell = rows[i].cells[2];
                     const code = rows[i].cells[0].textContent;
 
-                    if (statusCell.textContent === 'Sudah Digunakan') {
+                    if (statusCell.querySelector('select').value === 'Sudah Digunakan') {
                         Swal.fire({
                             icon: 'error',
                             title: 'Kupon Sudah Digunakan',
                             text: `${decodedText} sudah pernah digunakan!`
                         });
                     } else {
-                        statusCell.textContent = 'Sudah Digunakan';
+                        statusCell.querySelector('select').value = 'Sudah Digunakan';
                         statusCell.classList.remove('status-belum');
                         statusCell.classList.add('status-sudah');
                         timestampCell.textContent = new Date().toLocaleString(); // Menyimpan timestamp
@@ -945,9 +957,9 @@
                 const statusCell = rows[i].cells[1];
                 if (filterValue === 'semua') {
                     rows[i].style.display = '';
-                } else if (filterValue === 'sudah' && statusCell.textContent === 'Sudah Digunakan') {
+                } else if (filterValue === 'sudah' && statusCell.querySelector('select').value === 'Sudah Digunakan') {
                     rows[i].style.display = '';
-                } else if (filterValue === 'belum' && statusCell.textContent === 'Belum Digunakan') {
+                } else if (filterValue === 'belum' && statusCell.querySelector('select').value === 'Belum Digunakan') {
                     rows[i].style.display = '';
                 } else {
                     rows[i].style.display = 'none';
@@ -973,6 +985,63 @@
             searchKupon(); // Refresh the search results
         }
 
+        function useKupon() {
+            const kuponInput = document.getElementById('kupon-input').value.trim();
+            if (kuponInput) {
+                const rows = dataTable.rows;
+                let found = false;
+
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].cells[0].textContent === kuponInput) {
+                        found = true;
+                        const statusCell = rows[i].cells[1];
+                        const timestampCell = rows[i].cells[2];
+
+                        if (statusCell.querySelector('select').value === 'Sudah Digunakan') {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Kupon Sudah Digunakan',
+                                text: `${kuponInput} sudah pernah digunakan!`
+                            });
+                        } else {
+                            statusCell.querySelector('select').value = 'Sudah Digunakan';
+                            statusCell.classList.remove('status-belum');
+                            statusCell.classList.add('status-sudah');
+                            timestampCell.textContent = new Date().toLocaleString(); // Menyimpan timestamp
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Kupon Berhasil Digunakan',
+                                text: `${kuponInput} berhasil digunakan!`
+                            });
+
+                            const storedStatus = JSON.parse(localStorage.getItem('kuponStatus')) || {};
+                            storedStatus[kuponInput] = {
+                                status: 'Sudah Digunakan',
+                                timestamp: timestampCell.textContent
+                            };
+                            localStorage.setItem('kuponStatus', JSON.stringify(storedStatus));
+                        }
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Kupon Tidak Terdaftar',
+                        text: `${kuponInput} tidak ada dalam daftar kupon!`
+                    });
+                }
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Input Kosong',
+                    text: 'Silakan masukkan kode kupon.'
+                });
+            }
+        }
+
         function downloadCSV() {
             const rows = dataTable.rows;
             let csvContent = "data:text/csv;charset=utf-8,";
@@ -982,7 +1051,7 @@
                 const cells = rows[i].cells;
                 const rowData = [];
                 rowData.push(cells[0].textContent);
-                rowData.push(cells[1].textContent);
+                rowData.push(cells[1].querySelector('select').value); // Mengambil nilai dari dropdown
                 rowData.push(cells[2].textContent); // Menambahkan timestamp
                 csvContent += rowData.join(",") + "\n";
             }
@@ -1050,7 +1119,7 @@
                     for (let i = 0; i < rows.length; i++) {
                         const statusCell = rows[i].cells[1];
                         const timestampCell = rows[i].cells[2];
-                        statusCell.textContent = 'Belum Digunakan';
+                        statusCell.querySelector('select').value = 'Belum Digunakan';
                         statusCell.classList.remove('status-sudah');
                         statusCell.classList.add('status-belum');
                         timestampCell.textContent = 'N/A';
