@@ -72,13 +72,15 @@
         }
 
         .status-belum {
-            color: green;
+            color: green; /* Warna teks untuk status belum digunakan */
             font-weight: bold;
+            background-color: #d4edda; /* Warna latar belakang untuk status belum digunakan */
         }
 
         .status-sudah {
-            color: red;
+            color: red; /* Warna teks untuk status sudah digunakan */
             font-weight: bold;
+            background-color: #f8d7da; /* Warna latar belakang untuk status sudah digunakan */
         }
 
         #admin-panel {
@@ -121,7 +123,6 @@
             margin-bottom: 20px;
         }
 
-
         .custom-input-kupon button:hover {
             background-color: #0056b3;
         }
@@ -159,6 +160,26 @@
                 opacity: 1;
             }
         }
+
+        .form-control {
+            width: 100%;
+            height: calc(1.5em + .75rem + 2px);
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #495057;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 1px solid #ced4da;
+            border-radius: .25rem;
+            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+        }
+
+        .input-group {
+            position: relative;
+            width: 27%; /* Mengganti flex dengan width */
+        }
     </style>
 </head>
 <body>
@@ -168,33 +189,33 @@
         <button id="logout-btn" class="btn btn-danger" style="display:none;">Logout</button>
         <div id="reader"></div>
         
-        <!-- Container untuk input kupon -->
-        <div class="custom-input-kupon-container">
-            <div class="custom-input-kupon">
-                <input type="text" id="kupon-input" placeholder="Masukkan kode kupon...">
-                <button onclick="useKupon()">Gunakan Kupon</button>
+        <!-- Container untuk input kupon dan statistik -->
+        <div id="kupon-container">
+            <div class="custom-input-kupon-container">
+                <div class="custom-input-kupon">
+                    <input type="text" id="kupon-input" placeholder="Masukkan kode kupon...">
+                    <button onclick="useKupon()">Gunakan Kupon</button>
+                </div>
             </div>
+
+            <p style="text-align: left;">Total Kupon: <span id="total-kupon">0</span></p>
+            <p style="text-align: left;">Kupon Sudah Digunakan: <span id="kupon-sudah">0</span></p>
+            <p style="text-align: left;">Kupon Belum Digunakan: <span id="kupon-belum">0</span></p>        
         </div>
 
-        <p style="text-align: left;">Total Kupon: <span id="total-kupon">0</span></p>
-        <p style="text-align: left;">Kupon Sudah Digunakan: <span id="kupon-sudah">0</span></p>
-        <p style="text-align: left;">Kupon Belum Digunakan: <span id="kupon-belum">0</span></p>        
-
         <div id="admin-panel" class="mt-4">
-            <h2>Admin Panel</h2>
+            <h2 style="text-align: center;">Admin Panel</h2>
             <div class="form-group">
-                <label for="search">Pencarian Kupon:</label>
                 <div class="input-group">
                     <input type="text" id="search" class="form-control" placeholder="Cari kode kupon..." oninput="searchKupon()">
                 </div>
-                <button class="btn btn-outline-secondary" id="refresh-btn" onclick="refreshSearch()">Refresh</button>
-                <label for="kupon-input" class="mt-2">Input Kupon:</label>
-                <label for="filter" class="mt-2">Filter Kupon:</label>
+    
                 <select id="filter" class="form-control" style="width: auto;" onchange="filterKupon()">
                     <option value="semua">Semua</option>
-                    <option value="sudah">Sudah Digunakan</option>
-                    <option value="belum">Belum Digunakan</option>
+                    <option value="sudah" style="color: red;">Sudah Digunakan</option>
+                    <option value="belum" style="color: green;">Belum Digunakan</option>
                 </select>
+                <button class="btn btn-outline-secondary" id="refresh-btn" onclick="refreshSearch()">Refresh</button>
             </div>
             <div id="stats" class="mb-3">
                 <p>Total Kupon: <span id="total-kupon-admin">0</span></p>
@@ -1081,10 +1102,8 @@
                     document.getElementById('logout-btn').style.display = 'inline-block';
                     document.getElementById('reader').style.display = 'none';
 
-                    // Sembunyikan elemen yang diinginkan
-                    document.getElementById('total-kupon').parentElement.style.display = 'none';
-                    document.getElementById('kupon-sudah').parentElement.style.display = 'none';
-                    document.getElementById('kupon-belum').parentElement.style.display = 'none';
+                    // Sembunyikan elemen input kupon dan statistik
+                    document.getElementById('kupon-container').style.display = 'none';
 
                     html5QrCode.stop();
                     Swal.fire('Berhasil!', 'Login admin berhasil.', 'success');
@@ -1099,6 +1118,7 @@
             document.getElementById('login-btn').style.display = 'inline-block';
             document.getElementById('logout-btn').style.display = 'none';
             document.getElementById('reader').style.display = 'block';
+            document.getElementById('kupon-container').style.display = 'block'; // Tampilkan kembali input kupon dan statistik
             html5QrCode.start(
                 { facingMode: "environment" },
                 { fps: 10, qrbox: 250 },
@@ -1171,6 +1191,27 @@
             const x = e.pageX - scrollableTable.offsetLeft;
             const walk = (x - startX) * 2; // the multiplier can be adjusted for speed
             scrollableTable.scrollLeft = scrollLeft - walk;
+        });
+
+        // Tambahkan fungsi untuk menghentikan kamera
+        function stopCamera() {
+            html5QrCode.stop().then(() => {
+                console.log("Kamera dihentikan.");
+            }).catch(err => {
+                console.error("Gagal menghentikan kamera.", err);
+            });
+        }
+
+        // Tambahkan event listener pada input kupon
+        document.getElementById('kupon-input').addEventListener('click', stopCamera);
+
+        // Hidupkan kembali kamera saat input kehilangan fokus
+        document.getElementById('kupon-input').addEventListener('focusout', () => {
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 10, qrbox: 250 },
+                onScanSuccess
+            ).catch(err => console.error('QR Code scanning failed.', err));
         });
     </script>
 </body>
