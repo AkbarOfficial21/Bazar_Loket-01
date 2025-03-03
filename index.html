@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
     <style>
         /* Menghilangkan padding kiri dan kanan dari semua kontainer */
         .container,
@@ -179,6 +180,20 @@
         .input-group {
             width: 100%; /* Mengatur lebar input group menjadi 100% */
         }
+
+        #scroll-to-top {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -223,6 +238,7 @@
                 <p>Kupon Belum Digunakan: <span id="kupon-belum-admin">0</span></p>
             </div>
             <button id="download-btn" class="btn btn-info">Download CSV</button>
+            <button id="download-pdf-btn" class="btn btn-info">Download PDF</button>
             <button id="reset-btn" class="btn btn-warning">Reset All AKSI</button>
             <div class="table-container">
                 <div class="table-responsive">
@@ -245,6 +261,8 @@
             </div>
         </div>
     </div>
+
+    <button id="scroll-to-top">↑</button>
 
     <script>
         const kuponList = [
@@ -695,6 +713,35 @@
             link.click();
         }
 
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Ambil data dari tabel
+            const rows = dataTable.rows;
+            const tableData = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].cells;
+                const rowData = [];
+                rowData.push(cells[0].textContent);
+                rowData.push(cells[1].querySelector('select').value);
+                rowData.push(cells[2].textContent);
+                tableData.push(rowData);
+            }
+
+            // Tambahkan header
+            doc.text("Data Kupon", 14, 16);
+            doc.autoTable({
+                head: [['CODE KUPON', 'STATUS', 'TIMESTAMP']],
+                body: tableData,
+                startY: 20,
+            });
+
+            // Simpan PDF
+            doc.save('data_kupon.pdf');
+        }
+
         const html5QrCode = new Html5Qrcode("reader");
 
         document.getElementById('login-btn').addEventListener('click', () => {
@@ -770,6 +817,7 @@
         };
 
         document.getElementById('download-btn').addEventListener('click', downloadCSV);
+        document.getElementById('download-pdf-btn').addEventListener('click', downloadPDF);
 
         // Fungsionalitas geser tabel
         const scrollableTable = document.getElementById('scrollable-table');
@@ -821,6 +869,21 @@
                 { fps: 10, qrbox: 250 },
                 onScanSuccess
             ).catch(err => console.error('QR Code scanning failed.', err));
+        });
+
+        // Fitur panah kembali ke atas
+        const scrollToTopButton = document.getElementById('scroll-to-top');
+
+        window.addEventListener('scroll', () => {
+            if (document.body.scrollTop > 100 || document.documentElement.scrollTop > 100) {
+                scrollToTopButton.style.display = "block";
+            } else {
+                scrollToTopButton.style.display = "none";
+            }
+        });
+
+        scrollToTopButton.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     </script>
 </body>
