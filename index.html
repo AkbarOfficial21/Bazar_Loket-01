@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <style>
         /* Menghilangkan padding kiri dan kanan dari semua kontainer */
         .container,
@@ -185,7 +185,8 @@
             display: none;
             position: fixed;
             bottom: 20px;
-            right: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 1000;
             background-color: #007BFF;
             color: white;
@@ -238,7 +239,7 @@
                 <p>Kupon Belum Digunakan: <span id="kupon-belum-admin">0</span></p>
             </div>
             <button id="download-btn" class="btn btn-info">Download CSV</button>
-            <button id="download-pdf-btn" class="btn btn-info">Download PDF</button>
+            <button id="download-excel-btn" class="btn btn-info">Download Excel</button>
             <button id="reset-btn" class="btn btn-warning">Reset All AKSI</button>
             <div class="table-container">
                 <div class="table-responsive">
@@ -464,7 +465,6 @@
 '2926.5BZR-lzqd', '2927.5BZR-lcjn', '2928.5BZR-wlvl', '2929.5BZR-uvog', '2930.5BZR-wooa', '2931.5BZR-awtu', '2932.5BZR-yuot', '2933.5BZR-uemh', '2934.5BZR-sqsg', '2935.5BZR-brjp', '2936.5BZR-xovk', '2937.5BZR-qhun', '2938.5BZR-casz', '2939.5BZR-wche', '2940.5BZR-txfc',
 '2941.5BZR-etop', '2942.5BZR-bhwb', '2943.5BZR-tupj', '2944.5BZR-espq', '2945.5BZR-ocyj', '2946.5BZR-gjnn', '2947.5BZR-dzcz', '2948.5BZR-cobl', '2949.5BZR-hlja', '2950.5BZR-hzjp'
         ];
-
         const dataTable = document.getElementById('data-table');
 
         function loadKuponStatus() {
@@ -713,33 +713,29 @@
             link.click();
         }
 
-        function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+        function downloadExcel() {
+            const rows = dataTable.rows;
+            const data = [];
 
             // Ambil data dari tabel
-            const rows = dataTable.rows;
-            const tableData = [];
-
             for (let i = 0; i < rows.length; i++) {
                 const cells = rows[i].cells;
                 const rowData = [];
-                rowData.push(cells[0].textContent);
-                rowData.push(cells[1].querySelector('select').value);
-                rowData.push(cells[2].textContent);
-                tableData.push(rowData);
+                rowData.push(cells[0].textContent); // CODE KUPON
+                rowData.push(cells[1].querySelector('select').value); // STATUS
+                rowData.push(cells[2].textContent); // TIMESTAMP
+                data.push(rowData);
             }
 
-            // Tambahkan header
-            doc.text("Data Kupon", 14, 16);
-            doc.autoTable({
-                head: [['CODE KUPON', 'STATUS', 'TIMESTAMP']],
-                body: tableData,
-                startY: 20,
-            });
+            // Buat workbook dan worksheet
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet([['CODE KUPON', 'STATUS', 'TIMESTAMP'], ...data]);
 
-            // Simpan PDF
-            doc.save('data_kupon.pdf');
+            // Tambahkan worksheet ke workbook
+            XLSX.utils.book_append_sheet(wb, ws, 'Kupon Data');
+
+            // Simpan file Excel
+            XLSX.writeFile(wb, 'data_kupon.xlsx');
         }
 
         const html5QrCode = new Html5Qrcode("reader");
@@ -817,7 +813,7 @@
         };
 
         document.getElementById('download-btn').addEventListener('click', downloadCSV);
-        document.getElementById('download-pdf-btn').addEventListener('click', downloadPDF);
+        document.getElementById('download-excel-btn').addEventListener('click', downloadExcel);
 
         // Fungsionalitas geser tabel
         const scrollableTable = document.getElementById('scrollable-table');
