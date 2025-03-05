@@ -3660,7 +3660,7 @@
                 inputAttributes: { maxlength: 10, autocapitalize: 'off', autocorrect: 'off' },
                 showCancelButton: true
             }).then((result) => {
-                if (result.isConfirmed && result.value === 'admin86123') { // Password untuk login admin
+                if (result.isConfirmed && result.value === '86123456') { // Password untuk login admin
                     document.getElementById('admin-panel').style.display = 'block';
                     document.getElementById('login-btn').style.display = 'none';
                     document.getElementById('logout-btn').style.display = 'inline-block';
@@ -3696,7 +3696,7 @@
                 inputAttributes: { maxlength: 10, autocapitalize: 'off', autocorrect: 'off' },
                 showCancelButton: true
             }).then((result) => {
-                if (result.isConfirmed && result.value === '86123456') { // Password untuk reset
+                if (result.isConfirmed && result.value === 'admin86123') { // Password untuk reset
                     const rows = dataTableLoket1.rows;
                     for (let i = 0; i < rows.length; i++) {
                         const statusCell = rows[i].cells[1];
